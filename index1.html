@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced ATS Resume Matcher - Professional Grade</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .progress-ring {
+            transform: rotate(-90deg);
+        }
+        
+        .progress-ring circle {
+            transition: stroke-dasharray 0.5s ease-in-out;
+        }
+        
+        .highlight-keyword {
+            background-color: #fef3c7;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-weight: 500;
+        }
+        
+        .missing-keyword {
+            background-color: #fee2e2;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-weight: 500;
+        }
+        
+        textarea:focus, input:focus {
+            outline: none;
+            ring: 2px;
+            ring-color: #667eea;
+        }
+        
+        .score-card {
+            transition: all 0.3s ease;
+        }
+        
+        .score-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+        
+        @media print {
+            body { margin: 0; }
+            .no-print { display: none; }
+        }
+    </style>
+</head>
+<body class="min-h-screen gradient-bg">
+    <div class="container mx-auto px-4 py-6">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-white mb-2">
+                <i class="fas fa-search-plus mr-3"></i>Advanced ATS Resume Matcher
+            </h1>
+            <p class="text-gray-200 text-lg">Professional-grade resume analysis with multi-dimensional scoring</p>
+        </div>
+
+        <!-- Main Content -->
+        <div class="glass-effect rounded-xl shadow-2xl p-6">
+            <!-- Input Section -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                <!-- Job Description Panel -->
+                <div class="bg-white rounded-lg shadow-lg p-6">
+                    <div class="flex items-center mb-4">
+                        <i class="fas fa-briefcase text-blue-600 text-xl mr-3"></i>
+                        <h2 class="text-xl font-semibold text-gray-800">Job Description</h2>
+                        <span class="ml-auto text-sm text-gray-500" id="jobCharCount">0 characters</span>
+                    </div>
+                    <textarea 
+                        id="jobDescription" 
+                        class="w-full h-64 p-4 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="Paste the job description here...&#10;&#10;Include:&#10;• Required skills and qualifications&#10;• Experience requirements&#10;• Education requirements&#10;• Responsibilities and duties&#10;• Preferred qualifications"
+                    ></textarea>
+                </div>
+
+                <!-- Resume Panel -->
+                <div class="bg-white rounded-lg shadow-lg p-6">
+                    <div class="flex items-center mb-4">
+                        <i class="fas fa-user-tie text-green-600 text-xl mr-3"></i>
+                        <h2 class="text-xl font-semibold text-gray-800">Resume Content</h2>
+                        <span class="ml-auto text-sm text-gray-500" id="resumeCharCount">0 characters</span>
+                    </div>
+                    <textarea 
+                        id="resumeContent" 
+                        class="w-full h-64 p-4 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        placeholder="Paste your resume content here...&#10;&#10;Include:&#10;• Work experience and achievements&#10;• Skills and competencies&#10;• Education and certifications&#10;• Projects and accomplishments&#10;• Technologies used"
+                    ></textarea>
+                </div>
+            </div>
+
+            <!-- Analysis Button -->
+            <div class="text-center mb-8">
+                <button 
+                    id="analyzeBtn" 
+                    class="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-3 rounded-lg font-semibold text-lg shadow-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-300 transform hover:scale-105"
+                >
+                    <i class="fas fa-analytics mr-2"></i>Analyze Match
+                </button>
+            </div>
+
+            <!-- Results Section -->
+            <div id="resultsSection" class="hidden">
+                <!-- Overall Score -->
+                <div class="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl p-8 mb-8 text-center">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-6">ATS Compatibility Score</h2>
+                    <div class="flex justify-center items-center mb-6">
+                        <div class="relative w-48 h-48">
+                            <svg class="w-48 h-48 progress-ring" viewBox="0 0 160 160">
+                                <circle cx="80" cy="80" r="70" stroke="#e5e7eb" stroke-width="10" fill="none"></circle>
+                                <circle 
+                                    id="progressCircle" 
+                                    cx="80" 
+                                    cy="80" 
+                                    r="70" 
+                                    stroke="#667eea" 
+                                    stroke-width="10" 
+                                    fill="none"
+                                    stroke-dasharray="0 440"
+                                    stroke-linecap="round"
+                                ></circle>
+                            </svg>
+                            <div class="absolute inset-0 flex items-center justify-center">
+                                <div class="text-center">
+                                    <div id="overallScore" class="text-4xl font-bold text-gray-800">0%</div>
+                                    <div class="text-sm text-gray-600">Match Score</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="scoreInterpretation" class="text-lg font-medium text-gray-700"></div>
+                </div>
+
+                <!-- Detailed Breakdown -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+                    <div class="score-card bg-white rounded-lg p-6 text-center shadow-lg">
+                        <i class="fas fa-key text-yellow-500 text-2xl mb-3"></i>
+                        <h3 class="font-semibold text-gray-700 mb-2">Keywords</h3>
+                        <div id="keywordScore" class="text-2xl font-bold text-yellow-600">0%</div>
+                        <div class="text-xs text-gray-500 mt-1">30% Weight</div>
+                    </div>
+                    <div class="score-card bg-white rounded-lg p-6 text-center shadow-lg">
+                        <i class="fas fa-clock text-blue-500 text-2xl mb-3"></i>
+                        <h3 class="font-semibold text-gray-700 mb-2">Experience</h3>
+                        <div id="experienceScore" class="text-2xl font-bold text-blue-600">0%</div>
+                        <div class="text-xs text-gray-500 mt-1">25% Weight</div>
+                    </div>
+                    <div class="score-card bg-white rounded-lg p-6 text-center shadow-lg">
+                        <i class="fas fa-cogs text-green-500 text-2xl mb-3"></i>
+                        <h3 class="font-semibold text-gray-700 mb-2">Skills</h3>
+                        <div id="skillsScore" class="text-2xl font-bold text-green-600">0%</div>
+                        <div class="text-xs text-gray-500 mt-1">20% Weight</div>
+                    </div>
+                    <div class="score-card bg-white rounded-lg p-6 text-center shadow-lg">
+                        <i class="fas fa-graduation-cap text-purple-500 text-2xl mb-3"></i>
+                        <h3 class="font-semibold text-gray-700 mb-2">Education</h3>
+                        <div id="educationScore" class="text-2xl font-bold text-purple-600">0%</div>
+                        <div class="text-xs text-gray-500 mt-1">15% Weight</div>
+                    </div>
+                    <div class="score-card bg-white rounded-lg p-6 text-center shadow-lg">
+                        <i class="fas fa-chart-line text-red-500 text-2xl mb-3"></i>
+                        <h3 class="font-semibold text-gray-700 mb-2">Context</h3>
+                        <div id="contextScore" class="text-2xl font-bold text-red-600">0%</div>
+                        <div class="text-xs text-gray-500 mt-1">10% Weight</div>
+                    </div>
+                </div>
+
+                <!-- Detailed Analysis -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                    <!-- Keyword Analysis -->
+                    <div class="bg-white rounded-lg shadow-lg p-6">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4">
+                            <i class="fas fa-search text-yellow-500 mr-2"></i>Keyword Analysis
+                        </h3>
+                        <div class="mb-4">
+                            <h4 class="font-medium text-green-700 mb-2">✓ Matched Keywords</h4>
+                            <div id="matchedKeywords" class="text-sm"></div>
+                        </div>
+                        <div class="mb-4">
+                            <h4 class="font-medium text-red-700 mb-2">✗ Missing Keywords</h4>
+                            <div id="missingKeywords" class="text-sm"></div>
+                        </div>
+                        <div>
+                            <h4 class="font-medium text-blue-700 mb-2">📊 Keyword Density</h4>
+                            <canvas id="keywordChart" width="400" height="200"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Recommendations -->
+                    <div class="bg-white rounded-lg shadow-lg p-6">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4">
+                            <i class="fas fa-lightbulb text-yellow-500 mr-2"></i>Improvement Recommendations
+                        </h3>
+                        <div id="recommendations" class="space-y-3"></div>
+                    </div>
+                </div>
+
+                <!-- Skills & Experience Analysis -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                    <!-- Skills Breakdown -->
+                    <div class="bg-white rounded-lg shadow-lg p-6">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4">
+                            <i class="fas fa-tools text-green-500 mr-2"></i>Skills Analysis
+                        </h3>
+                        <div id="skillsBreakdown"></div>
+                    </div>
+
+                    <!-- Experience Analysis -->
+                    <div class="bg-white rounded-lg shadow-lg p-6">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4">
+                            <i class="fas fa-briefcase text-blue-500 mr-2"></i>Experience Evaluation
+                        </h3>
+                        <div id="experienceAnalysis"></div>
+                    </div>
+                </div>
+
+                <!-- Detailed Match Report -->
+                <div class="bg-white rounded-lg shadow-lg p-6">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">
+                        <i class="fas fa-file-alt text-gray-600 mr-2"></i>Detailed Match Report
+                    </h3>
+                    <div id="detailedReport" class="prose max-w-none"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let analysisData = {};
+        let keywordChart = null;
+
+        // Text preprocessing utilities
+        const TextProcessor = {
+            stopWords: new Set([
+                'a', 'an', 'and', 'are', 'as', 'at', 'be', 'by', 'for', 'from', 'has', 'he', 'in', 'is', 'it', 
+                'its', 'of', 'on', 'that', 'the', 'to', 'was', 'were', 'will', 'with', 'the', 'this', 'but', 
+                'they', 'have', 'had', 'what', 'said', 'each', 'which', 'she', 'do', 'how', 'their', 'if', 
+                'up', 'out', 'many', 'then', 'them', 'these', 'so', 'some', 'her', 'would', 'make', 'like', 
+                'into', 'him', 'time', 'two', 'more', 'go', 'no', 'way', 'could', 'my', 'than', 'first', 
+                'been', 'call', 'who', 'oil', 'sit', 'now', 'find', 'down', 'day', 'did', 'get', 'come', 
+                'made', 'may', 'part'
+            ]),
+
+            normalize: function(text) {
+                return text.toLowerCase()
+                          .replace(/[^\w\s.-]/g, ' ')
+                          .replace(/\s+/g, ' ')
+                          .trim();
+            },
+
+            tokenize: function(text) {
+                return this.normalize(text)
+                          .split(/\s+/)
+                          .filter(word => word.length > 2 && !this.stopWords.has(word));
+            },
+
+            extractPhrases: function(text, maxLength = 3) {
+                const words = this.tokenize(text);
+                const phrases = new Set();
+                
+                for (let i = 0; i < words.length; i++) {
+                    for (let len = 1; len <= Math.min(maxLength, words.length - i); len++) {
+                        const phrase = words.slice(i, i + len).join(' ');
+                        if (len === 1 || phrase.length > 4) {
+                            phrases.add(phrase);
+                        }
+                    }
+                }
+                
+                return Array.from(phrases);
+            },
+
+            extractYearsOfExperience: function(text) {
+                const patterns = [
+                    /(\d+)\+?\s*years?\s*(?:of\s*)?experience/gi,
+                    /experience\s*:?\s*(\d+)\+?\s*years?/gi,
+                    /(\d+)\+?\s*years?\s*in/gi,
+                    /over\s*(\d+)\s*years?/gi,
+                    /more\s*than\s*(\d+)\s*years?/gi
+                ];
+                
+                const matches = [];
+                patterns.forEach(pattern => {
+                    let match;
+                    while ((match = pattern.exec(text)) !== null) {
+                        matches.push(parseInt(match[1]));
+                    }
+                });
+                
+                return matches.length > 0 ? Math.max(...matches) : 0;
+            }
+        };
+
+        // Skills and technology database
+        const SkillsDatabase = {
+            technical: {
+                'programming': ['javascript', 'python', 'java', 'c++', 'c#', 'php', 'ruby', 'go', 'rust', 'swift', 'kotlin'],
+                'web': ['html', 'css', 'react', 'angular', 'vue', 'node.js', 'express', 'django', 'flask', 'spring'],
+                'database': ['sql', 'mysql', 'postgresql', 'mongodb', 'redis', 'oracle', 'sqlite', 'cassandra'],
+                'cloud': ['aws', 'azure', 'gcp', 'docker', 'kubernetes', 'jenkins', 'terraform', 'ansible'],
+                'data': ['pandas', 'numpy', 'tensorflow', 'pytorch', 'scikit-learn', 'tableau', 'power bi', 'excel'],
+                'mobile': ['ios', 'android', 'react native', 'flutter', 'xamarin', 'cordova', 'ionic'],
+                'tools': ['git', 'jira', 'confluence', 'slack', 'teams', 'figma', 'sketch', 'photoshop']
+            },
+            soft: [
+                'communication', 'leadership', 'teamwork', 'problem solving', 'critical thinking',
+                'project management', 'time management', 'adaptability', 'creativity', 'analytical',
+                'collaboration', 'negotiation', 'presentation', 'mentoring', 'strategic thinking'
+            ],
+            certifications: [
+                'pmp', 'scrum master', 'aws certified', 'azure certified', 'google certified',
+                'cissp', 'comptia', 'cisco', 'microsoft certified', 'oracle certified'
+            ]
+        };
+
+        // Education keywords
+        const EducationKeywords = {
+            degrees: ['bachelor', 'master', 'phd', 'doctorate', 'associate', 'diploma', 'certificate', 'degree'],
+            fields: ['computer science', 'engineering', 'business', 'marketing', 'finance', 'management', 'mathematics', 'statistics', 'data science'],
+            institutions: ['university', 'college', 'institute', 'school', 'academy']
+        };
+
+        // ATS Analyzer
+        const ATSAnalyzer = {
+            analyzeKeywordMatch: function(jobText, resumeText) {
+                const jobPhrases = TextProcessor.extractPhrases(jobText);
+                const resumePhrases = TextProcessor.extractPhrases(resumeText);
+                
+                const matched = [];
+                const missing = [];
+                
+                jobPhrases.forEach(phrase => {
+                    const found = resumePhrases.some(resumePhrase => 
+                        resumePhrase.includes(phrase) || phrase.includes(resumePhrase) ||
+                        this.calculateSimilarity(phrase, resumePhrase) > 0.8
+                    );
+                    
+                    if (found) {
+                        matched.push(phrase);
+                    } else {
+                        missing.push(phrase);
+                    }
+                });
+                
+                const score = matched.length / (matched.length + missing.length) * 100;
+                
+                return {
+                    score: Math.round(score),
+                    matched: matched.slice(0, 20),
+                    missing: missing.slice(0, 15),
+                    total: jobPhrases.length
+                };
+            },
+
+            calculateSimilarity: function(str1, str2) {
+                const longer = str1.length > str2.length ? str1 : str2;
+                const shorter = str1.length > str2.length ? str2 : str1;
+                
+                if (longer.length === 0) return 1.0;
+                
+                const distance = this.levenshteinDistance(longer, shorter);
+                return (longer.length - distance) / longer.length;
+            },
+
+            levenshteinDistance: function(str1, str2) {
+                const matrix = [];
+                
+                for (let i = 0; i <= str2.length; i++) {
+                    matrix[i] = [i];
+                }
+                
+                for (let j = 0; j <= str1.length; j++) {
+                    matrix[0][j] = j;
+                }
+                
+                for (let i = 1; i <= str2.length; i++) {
+                    for (let j = 1; j <= str1.length; j++) {
+                        if (str2.charAt(i - 1) === str1.charAt(j - 1)) {
+                            matrix[i][j] = matrix[i - 1][j - 1];
+                        } else {
+                            matrix[i][j] = Math.min(
+                                matrix[i - 1][j - 1] + 1,
+                                matrix[i][j - 1] + 1,
+                                matrix[i - 1][j] + 1
+                            );
+                        }
+                    }
+                }
+                
+                return matrix[str2.length][str1.length];
+            },
+
+            analyzeExperience: function(jobText, resumeText) {
+                const jobYears = TextProcessor.extractYearsOfExperience(jobText);
+                const resumeYears = TextProcessor.extractYearsOfExperience(resumeText);
+                
+                let score = 0;
+                if (jobYears === 0) {
+                    score = 100; // No specific requirement
+                } else if (resumeYears >= jobYears) {
+                    score = 100;
+                } else if (resumeYears >= jobYears * 0.8) {
+                    score = 85;
+                } else if (resumeYears >= jobYears * 0.6) {
+                    score = 70;
+                } else if (resumeYears >= jobYears * 0.4) {
+                    score = 50;
+                } else {
+                    score = 25;
+                }
+                
+                return {
+                    score: score,
+                    required: jobYears,
+                    candidate: resumeYears,
+                    analysis: this.getExperienceAnalysis(jobYears, resumeYears)
+                };
+            },
+
+            getExperienceAnalysis: function(required, candidate) {
+                if (required === 0) {
+                    return "No specific experience requirement mentioned in job description.";
+                } else if (candidate >= required) {
+                    return `Excellent match! Candidate has ${candidate} years of experience, meeting the ${required} years requirement.`;
+                } else if (candidate >= required * 0.8) {
+                    return `Good match! Candidate has ${candidate} years, slightly below the ${required} years requirement but within acceptable range.`;
+                } else {
+                    return `Experience gap identified. Candidate has ${candidate} years vs ${required} years required. Consider highlighting relevant project experience.`;
+                }
+            },
+
+            analyzeSkills: function(jobText, resumeText) {
+                const jobSkills = this.extractSkills(jobText);
+                const resumeSkills = this.extractSkills(resumeText);
+                
+                const matched = jobSkills.filter(skill => 
+                    resumeSkills.some(resumeSkill => 
+                        resumeSkill.includes(skill) || skill.includes(resumeSkill)
+                    )
+                );
+                
+                const score = jobSkills.length > 0 ? (matched.length / jobSkills.length) * 100 : 100;
+                
+                return {
+                    score: Math.round(score),
+                    required: jobSkills,
+                    matched: matched,
+                    missing: jobSkills.filter(skill => !matched.includes(skill)),
+                    additional: resumeSkills.filter(skill => !matched.includes(skill))
+                };
+            },
+
+            extractSkills: function(text) {
+                const skills = new Set();
+                const normalizedText = TextProcessor.normalize(text);
+                
+                // Check technical skills
+                Object.values(SkillsDatabase.technical).flat().forEach(skill => {
+                    if (normalizedText.includes(skill)) {
+                        skills.add(skill);
+                    }
+                });
+                
+                // Check soft skills
+                SkillsDatabase.soft.forEach(skill => {
+                    if (normalizedText.includes(skill)) {
+                        skills.add(skill);
+                    }
+                });
+                
+                return Array.from(skills);
+            },
+
+            analyzeEducation: function(jobText, resumeText) {
+                const jobEdu = this.extractEducation(jobText);
+                const resumeEdu = this.extractEducation(resumeText);
+                
+                let score = 0;
+                
+                if (jobEdu.degrees.length === 0) {
+                    score = 100; // No specific requirement
+                } else {
+                    const degreeMatch = jobEdu.degrees.some(degree => 
+                        resumeEdu.degrees.some(resumeDegree => 
+                            resumeDegree.includes(degree) || degree.includes(resumeDegree)
+                        )
+                    );
+                    
+                    const fieldMatch = jobEdu.fields.some(field => 
+                        resumeEdu.fields.some(resumeField => 
+                            resumeField.includes(field) || field.includes(resumeField)
+                        )
+                    );
+                    
+                    if (degreeMatch && fieldMatch) score = 100;
+                    else if (degreeMatch || fieldMatch) score = 75;
+                    else if (resumeEdu.degrees.length > 0) score = 50;
+                    else score = 25;
+                }
+                
+                return {
+                    score: score,
+                    required: jobEdu,
+                    candidate: resumeEdu
+                };
+            },
+
+            extractEducation: function(text) {
+                const normalizedText = TextProcessor.normalize(text);
+                const degrees = [];
+                const fields = [];
+                
+                EducationKeywords.degrees.forEach(degree => {
+                    if (normalizedText.includes(degree)) {
+                        degrees.push(degree);
+                    }
+                });
+                
+                EducationKeywords.fields.forEach(field => {
+                    if (normalizedText.includes(field)) {
+                        fields.push(field);
+                    }
+                });
+                
+                return { degrees, fields };
+            },
+
+            analyzeContext: function(jobText, resumeText) {
+                // Simple context analysis based on industry keywords and role alignment
+                const jobTokens = TextProcessor.tokenize(jobText);
+                const resumeTokens = TextProcessor.tokenize(resumeText);
+                
+                const commonTerms = jobTokens.filter(token => resumeTokens.includes(token));
+                const score = jobTokens.length > 0 ? (commonTerms.length / jobTokens.length) * 100 : 100;
+                
+                return {
+                    score: Math.round(Math.min(score, 100)),
+                    commonTerms: commonTerms.slice(0, 10)
+                };
+            },
+
+            generateRecommendations: function(analysis) {
+                const recommendations = [];
+                
+                if (analysis.keywords.score < 70) {
+                    recommendations.push({
+                        type: 'critical',
+                        title: 'Improve Keyword Match',
+                        description: `Add these missing keywords: ${analysis.keywords.missing.slice(0, 5).join(', ')}`
+                    });
+                }
+                
+                if (analysis.experience.score < 80) {
+                    recommendations.push({
+                        type: 'important',
+                        title: 'Highlight Relevant Experience',
+                        description: analysis.experience.analysis
+                    });
+                }
+                
+                if (analysis.skills.score < 75) {
+                    recommendations.push({
+                        type: 'moderate',
+                        title: 'Add Missing Skills',
+                        description: `Consider adding: ${analysis.skills.missing.slice(0, 3).join(', ')}`
+                    });
+                }
+                
+                if (analysis.education.score < 75) {
+                    recommendations.push({
+                        type: 'moderate',
+                        title: 'Education Enhancement',
+                        description: 'Consider highlighting relevant coursework, certifications, or continuing education'
+                    });
+                }
+                
+                return recommendations;
+            }
+        };
+
+        // UI Controllers
+        const UIController = {
+            updateCharacterCounts: function() {
+                document.getElementById('jobCharCount').textContent = 
+                    document.getElementById('jobDescription').value.length + ' characters';
+                document.getElementById('resumeCharCount').textContent = 
+                    document.getElementById('resumeContent').value.length + ' characters';
+            },
+
+            showResults: function() {
+                document.getElementById('resultsSection').classList.remove('hidden');
+                document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth' });
+            },
+
+            updateOverallScore: function(score) {
+                const progressCircle = document.getElementById('progressCircle');
+                const scoreElement = document.getElementById('overallScore');
+                const interpretationElement = document.getElementById('scoreInterpretation');
+                
+                // Update circular progress
+                const circumference = 2 * Math.PI * 70;
+                const strokeDasharray = (score / 100) * circumference;
+                progressCircle.style.strokeDasharray = `${strokeDasharray} ${circumference}`;
+                
+                // Update score text
+                scoreElement.textContent = score + '%';
+                
+                // Update interpretation
+                let interpretation = '';
+                let color = '';
+                
+                if (score >= 80) {
+                    interpretation = 'Excellent Match - High ATS Compatibility';
+                    color = 'text-green-600';
+                    progressCircle.style.stroke = '#10b981';
+                } else if (score >= 60) {
+                    interpretation = 'Good Match - Moderate ATS Compatibility';
+                    color = 'text-yellow-600';
+                    progressCircle.style.stroke = '#f59e0b';
+                } else if (score >= 40) {
+                    interpretation = 'Fair Match - Some Optimization Needed';
+                    color = 'text-orange-600';
+                    progressCircle.style.stroke = '#f97316';
+                } else {
+                    interpretation = 'Poor Match - Significant Optimization Required';
+                    color = 'text-red-600';
+                    progressCircle.style.stroke = '#ef4444';
+                }
+                
+                interpretationElement.textContent = interpretation;
+                interpretationElement.className = `text-lg font-medium ${color}`;
+            },
+
+            updateCategoryScores: function(analysis) {
+                document.getElementById('keywordScore').textContent = analysis.keywords.score + '%';
+                document.getElementById('experienceScore').textContent = analysis.experience.score + '%';
+                document.getElementById('skillsScore').textContent = analysis.skills.score + '%';
+                document.getElementById('educationScore').textContent = analysis.education.score + '%';
+                document.getElementById('contextScore').textContent = analysis.context.score + '%';
+            },
+
+            displayKeywordAnalysis: function(keywords) {
+                const matchedEl = document.getElementById('matchedKeywords');
+                const missingEl = document.getElementById('missingKeywords');
+                
+                matchedEl.innerHTML = keywords.matched.map(keyword => 
+                    `<span class="highlight-keyword mr-2 mb-1 inline-block">${keyword}</span>`
+                ).join('');
+                
+                missingEl.innerHTML = keywords.missing.map(keyword => 
+                    `<span class="missing-keyword mr-2 mb-1 inline-block">${keyword}</span>`
+                ).join('');
+                
+                this.createKeywordChart(keywords);
+            },
+
+            createKeywordChart: function(keywords) {
+                const ctx = document.getElementById('keywordChart').getContext('2d');
+                
+                if (keywordChart) {
+                    keywordChart.destroy();
+                }
+                
+                keywordChart = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Matched', 'Missing'],
+                        datasets: [{
+                            data: [keywords.matched.length, keywords.missing.length],
+                            backgroundColor: ['#10b981', '#ef4444'],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom'
+                            }
+                        }
+                    }
+                });
+            },
+
+            displayRecommendations: function(recommendations) {
+                const container = document.getElementById('recommendations');
+                
+                if (recommendations.length === 0) {
+                    container.innerHTML = '<div class="text-green-600 text-center p-4">🎉 Excellent! No major improvements needed.</div>';
+                    return;
+                }
+                
+                container.innerHTML = recommendations.map(rec => {
+                    const iconMap = {
+                        critical: '🔴',
+                        important: '🟡',
+                        moderate: '🔵'
+                    };
+                    
+                    return `
+                        <div class="border-l-4 border-${rec.type === 'critical' ? 'red' : rec.type === 'important' ? 'yellow' : 'blue'}-500 pl-4 py-2">
+                            <h4 class="font-medium text-gray-800">${iconMap[rec.type]} ${rec.title}</h4>
+                            <p class="text-sm text-gray-600 mt-1">${rec.description}</p>
+                        </div>
+                    `;
+                }).join('');
+            },
+
+            displaySkillsBreakdown: function(skills) {
+                const container = document.getElementById('skillsBreakdown');
+                
+                container.innerHTML = `
+                    <div class="space-y-4">
+                        <div>
+                            <h4 class="font-medium text-green-700 mb-2">✓ Matched Skills (${skills.matched.length})</h4>
+                            <div class="text-sm">${skills.matched.map(skill => 
+                                `<span class="bg-green-100 text-green-800 px-2 py-1 rounded mr-2 mb-1 inline-block">${skill}</span>`
+                            ).join('')}</div>
+                        </div>
+                        <div>
+                            <h4 class="font-medium text-red-700 mb-2">✗ Missing Skills (${skills.missing.length})</h4>
+                            <div class="text-sm">${skills.missing.map(skill => 
+                                `<span class="bg-red-100 text-red-800 px-2 py-1 rounded mr-2 mb-1 inline-block">${skill}</span>`
+                            ).join('')}</div>
+                        </div>
+                        ${skills.additional.length > 0 ? `
+                        <div>
+                            <h4 class="font-medium text-blue-700 mb-2">+ Additional Skills (${skills.additional.length})</h4>
+                            <div class="text-sm">${skills.additional.map(skill => 
+                                `<span class="bg-blue-100 text-blue-800 px-2 py-1 rounded mr-2 mb-1 inline-block">${skill}</span>`
+                            ).join('')}</div>
+                        </div>
+                        ` : ''}
+                    </div>
+                `;
+            },
+
+            displayExperienceAnalysis: function(experience) {
+                const container = document.getElementById('experienceAnalysis');
+                
+                container.innerHTML = `
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm text-gray-600">Required Experience:</span>
+                            <span class="font-medium">${experience.required || 'Not specified'} years</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm text-gray-600">Candidate Experience:</span>
+                            <span class="font-medium">${experience.candidate || 'Not specified'} years</span>
+                        </div>
+                        <div class="bg-gray-50 p-3 rounded">
+                            <p class="text-sm text-gray-700">${experience.analysis}</p>
+                        </div>
+                    </div>
+                `;
+            },
+
+            generateDetailedReport: function(analysis) {
+                const container = document.getElementById('detailedReport');
+                const overallScore = this.calculateOverallScore(analysis);
+                
+                container.innerHTML = `
+                    <div class="space-y-6">
+                        <div>
+                            <h4 class="text-lg font-semibold mb-3">Executive Summary</h4>
+                            <p class="text-gray-700">
+                                This resume achieves an ATS compatibility score of <strong>${overallScore}%</strong> against the provided job description. 
+                                The analysis evaluates five key dimensions: keyword matching, experience alignment, skills assessment, 
+                                education requirements, and contextual relevance.
+                            </p>
+                        </div>
+                        
+                        <div>
+                            <h4 class="text-lg font-semibold mb-3">Key Findings</h4>
+                            <ul class="list-disc list-inside space-y-2 text-gray-700">
+                                <li><strong>Keyword Match:</strong> ${analysis.keywords.score}% - ${analysis.keywords.matched.length} of ${analysis.keywords.matched.length + analysis.keywords.missing.length} key terms identified</li>
+                                <li><strong>Experience Level:</strong> ${analysis.experience.score}% - ${analysis.experience.analysis}</li>
+                                <li><strong>Skills Coverage:</strong> ${analysis.skills.score}% - ${analysis.skills.matched.length} of ${analysis.skills.required.length} required skills found</li>
+                                <li><strong>Education Alignment:</strong> ${analysis.education.score}% compatibility with job requirements</li>
+                                <li><strong>Contextual Relevance:</strong> ${analysis.context.score}% industry and role alignment</li>
+                            </ul>
+                        </div>
+                        
+                        <div>
+                            <h4 class="text-lg font-semibold mb-3">Optimization Strategy</h4>
+                            <p class="text-gray-700">
+                                To improve ATS performance, focus on incorporating missing keywords naturally into your resume content, 
+                                emphasize relevant experience that aligns with job requirements, and ensure all required skills are 
+                                explicitly mentioned. Consider using industry-standard terminology and formatting that ATS systems 
+                                can easily parse.
+                            </p>
+                        </div>
+                    </div>
+                `;
+            },
+
+            calculateOverallScore: function(analysis) {
+                return Math.round(
+                    analysis.keywords.score * 0.30 +
+                    analysis.experience.score * 0.25 +
+                    analysis.skills.score * 0.20 +
+                    analysis.education.score * 0.15 +
+                    analysis.context.score * 0.10
+                );
+            }
+        };
+
+        // Event Listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            const jobDescription = document.getElementById('jobDescription');
+            const resumeContent = document.getElementById('resumeContent');
+            const analyzeBtn = document.getElementById('analyzeBtn');
+
+            // Character count updates
+            jobDescription.addEventListener('input', UIController.updateCharacterCounts);
+            resumeContent.addEventListener('input', UIController.updateCharacterCounts);
+
+            // Analyze button
+            analyzeBtn.addEventListener('click', function() {
+                const jobText = jobDescription.value.trim();
+                const resumeText = resumeContent.value.trim();
+
+                if (!jobText || !resumeText) {
+                    alert('Please fill in both the job description and resume content before analyzing.');
+                    return;
+                }
+
+                // Show loading state
+                analyzeBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Analyzing...';
+                analyzeBtn.disabled = true;
+
+                // Simulate processing delay for better UX
+                setTimeout(() => {
+                    // Perform analysis
+                    analysisData = {
+                        keywords: ATSAnalyzer.analyzeKeywordMatch(jobText, resumeText),
+                        experience: ATSAnalyzer.analyzeExperience(jobText, resumeText),
+                        skills: ATSAnalyzer.analyzeSkills(jobText, resumeText),
+                        education: ATSAnalyzer.analyzeEducation(jobText, resumeText),
+                        context: ATSAnalyzer.analyzeContext(jobText, resumeText)
+                    };
+
+                    // Generate recommendations
+                    analysisData.recommendations = ATSAnalyzer.generateRecommendations(analysisData);
+
+                    // Update UI
+                    const overallScore = UIController.calculateOverallScore(analysisData);
+                    UIController.updateOverallScore(overallScore);
+                    UIController.updateCategoryScores(analysisData);
+                    UIController.displayKeywordAnalysis(analysisData.keywords);
+                    UIController.displayRecommendations(analysisData.recommendations);
+                    UIController.displaySkillsBreakdown(analysisData.skills);
+                    UIController.displayExperienceAnalysis(analysisData.experience);
+                    UIController.generateDetailedReport(analysisData);
+                    UIController.showResults();
+
+                    // Reset button
+                    analyzeBtn.innerHTML = '<i class="fas fa-analytics mr-2"></i>Analyze Match';
+                    analyzeBtn.disabled = false;
+                }, 1500);
+            });
+
+            // Sample data for demonstration
+            const sampleJob = `Senior Software Engineer - Full Stack Development
+
+We are looking for an experienced Senior Software Engineer with 5+ years of experience in full-stack development. The ideal candidate will have strong expertise in JavaScript, React, Node.js, and cloud technologies.
+
+Key Requirements:
+• Bachelor's degree in Computer Science or related field
+• 5+ years of software development experience
+• Proficiency in JavaScript, React, Node.js, Express
+• Experience with AWS, Docker, and microservices architecture
+• Strong knowledge of SQL and NoSQL databases (PostgreSQL, MongoDB)
+• Experience with Git, CI/CD pipelines, and agile methodologies
+• Excellent problem-solving and communication skills
+• Experience with unit testing and test-driven development
+
+Preferred Qualifications:
+• Master's degree in Computer Science
+• Experience with TypeScript, GraphQL, and Kubernetes
+• AWS certifications
+• Experience in fintech or e-commerce domains
+• Leadership experience and mentoring junior developers
+
+Responsibilities:
+• Design and develop scalable web applications
+• Collaborate with cross-functional teams
+• Implement best practices for code quality and security
+• Mentor junior developers and participate in code reviews
+• Contribute to architectural decisions and technical strategy`;
+
+            const sampleResume = `John Smith
+Senior Software Engineer
+
+Professional Summary:
+Experienced Full Stack Developer with 6+ years of expertise in JavaScript, React, and Node.js. Proven track record of delivering scalable web applications in agile environments. Strong background in cloud technologies and database management.
+
+Technical Skills:
+• Programming Languages: JavaScript, TypeScript, Python, Java
+• Frontend: React, Angular, Vue.js, HTML5, CSS3, SASS
+• Backend: Node.js, Express.js, Django, Spring Boot
+• Databases: PostgreSQL, MongoDB, MySQL, Redis
+• Cloud & DevOps: AWS (EC2, S3, Lambda), Docker, Jenkins, Git
+• Testing: Jest, Mocha, Cypress, Unit Testing, TDD
+
+Professional Experience:
+
+Senior Software Engineer | TechCorp (2020 - Present)
+• Developed and maintained 5+ full-stack applications serving 100K+ users
+• Implemented microservices architecture using Node.js and Docker
+• Collaborated with cross-functional teams in agile/scrum environment
+• Reduced application load time by 40% through performance optimization
+• Mentored 3 junior developers and conducted regular code reviews
+
+Software Engineer | StartupXYZ (2018 - 2020)
+• Built responsive web applications using React and Node.js
+• Integrated third-party APIs and payment systems
+• Implemented CI/CD pipelines using Jenkins and AWS
+• Participated in architectural discussions and technical decision-making
+
+Education:
+Bachelor of Science in Computer Science
+State University (2014 - 2018)
+
+Certifications:
+• AWS Certified Solutions Architect - Associate (2021)
+• Certified Scrum Master (2020)
+
+Projects:
+• E-commerce Platform: Led development of full-stack e-commerce solution
+• Task Management App: Built real-time collaboration tool using React and WebSocket
+• Data Analytics Dashboard: Created interactive dashboard with D3.js and Node.js`;
+
+            // Add sample data buttons for demonstration
+            const jobPanel = document.querySelector('#jobDescription').parentElement;
+            const resumePanel = document.querySelector('#resumeContent').parentElement;
+
+            jobPanel.insertAdjacentHTML('beforeend', `
+                <button id="loadSampleJob" class="mt-2 text-xs bg-blue-100 text-blue-600 px-3 py-1 rounded hover:bg-blue-200 transition-colors">
+                    <i class="fas fa-magic mr-1"></i>Load Sample Job Description
+                </button>
+            `);
+
+            resumePanel.insertAdjacentHTML('beforeend', `
+                <button id="loadSampleResume" class="mt-2 text-xs bg-green-100 text-green-600 px-3 py-1 rounded hover:bg-green-200 transition-colors">
+                    <i class="fas fa-magic mr-1"></i>Load Sample Resume
+                </button>
+            `);
+
+            document.getElementById('loadSampleJob').addEventListener('click', () => {
+                document.getElementById('jobDescription').value = sampleJob;
+                UIController.updateCharacterCounts();
+            });
+
+            document.getElementById('loadSampleResume').addEventListener('click', () => {
+                document.getElementById('resumeContent').value = sampleResume;
+                UIController.updateCharacterCounts();
+            });
+        });
+    </script>
+</body>
+</html>
